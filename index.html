@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>職業安全證照管理系統 - 實例數據版</title>
+    <title>職業安全證照管理系統</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -170,7 +170,8 @@
             select, 
             .table-cell:last-child, 
             .table-header-cell:last-child, 
-            .link-icon-btn {
+            .link-icon-btn,
+            footer {
                 display: none !important;
             }
             body { 
@@ -326,6 +327,12 @@
             </div>
         </div>
     </main>
+
+    <!-- 頁尾資訊 -->
+<footer class="max-w-7xl mx-auto px-8 pb-10 pt-4 flex flex-col items-center text-xs text-slate-400 font-medium gap-1">
+    <div>© 2026 職業安全衛生室｜職業安全證照管理系統</div>
+    <div>Developed by Sam Sun</div>
+    </footer>
 
     <!-- 檔案預覽 Modal -->
     <div id="file-preview-overlay" class="fixed inset-0 bg-black/90 hidden flex flex-col items-center justify-center p-4 md:p-10 text-white animate-in fade-in duration-200 z-[400]">
@@ -579,7 +586,7 @@
         { id: 18, dept: "電子部", name: "余謙琼", item: "游離輻射操作人員", certNo: "台能輻訓字第00021號", cycle: "3H/1Y", lastDate: "2025-10-29", attachments: [] },
         { id: 19, dept: "電子部", name: "周碧君", item: "有機溶劑作業主管", certNo: "", cycle: "6H/3Y", lastDate: "", attachments: [] },
         { id: 20, dept: "管理部", name: "阮立誠", item: "防火管理人", certNo: "北市消預字第1133000483號函證書字號:A113初00125號", cycle: "6H/3Y", lastDate: "2024-01-09", attachments: [] },
-        { id: 21, dept: "職業安全衛生室", name: "孫惠星", item: "職業安全衛生管理師", certNo: "勞檢字第1110012196號", cycle: "12H/2Y", lastDate: "2025-05-08", attachments: [] }
+        { id: 21, dept: "職業安全衛生室", name: "孫惠星", item: "職業安全管理師", certNo: "勞訓證字第22446-18號", cycle: "12H/2Y", lastDate: "2025-05-08", attachments: [] }
     ];
 
     // --- UI 功能與邏輯 ---
