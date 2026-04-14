@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>職業安全證照管理系統 - 模擬逾期展示版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap');
+        
+        body { 
+            font-family: 'Noto Sans TC', sans-serif; 
+            background-color: #f1f5f9; 
+            margin: 0;
+            color: #1e293b;
+        }
+
+        .hero-section {
+            background-color: #333a45;
+            color: white;
+            padding: 2.5rem 2rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .report-table-container {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+        }
+
+        .table-header-cell {
+            background-color: #f8fafc;
+            color: #64748b;
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 1rem;
+            border-bottom: 2px solid #e2e8f0;
+            text-align: left;
+        }
+
+        .table-row {
+            transition: background-color 0.2s;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .table-row:hover {
+            background-color: #f8fafc;
+        }
+
+        .table-cell {
+            padding: 1rem;
+            font-size: 0.9rem;
+            vertical-align: middle;
+        }
+
+        .badge-status {
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .btn-pill {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 999px;
+            padding: 6px 16px;
+            font-size: 14px;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-container {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 4px 8px;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .scale-in-center {
+            animation: scale-in-center 0.3s cubic-bezier(0.250, 0.460, 0.450, 0.940) both;
+        }
+        @keyframes scale-in-center {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-overlay {
+            background-color: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+        }
+
+        .scan-line {
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #6366f1, transparent);
+            position: absolute;
+            top: 0;
+            animation: scan 1.5s linear infinite;
+        }
+        @keyframes scan {
+            0% { top: 0%; }
+            100% { top: 100%; }
+        }
+
+        @keyframes progress {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+        .animate-progress {
+            animation: progress 2.8s ease-in-out forwards;
+        }
+
+        .db-action-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .db-action-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .link-icon-btn {
+            transition: transform 0.1s;
+        }
+        .link-icon-btn:active:not(:disabled) {
+            transform: scale(0.9);
+        }
+        .link-icon-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.3;
+        }
+
+        #drop-zone.drag-over {
+            border-color: #6366f1;
+            background-color: #f5f3ff;
+        }
+
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 1cm;
+            }
+            header.hero-section, 
+            #login-toggle-btn, 
+            #export-btn, 
+            #print-btn, 
+            #auto-update-btn, 
+            .db-action-btn, 
+            #add-person-btn, 
+            .search-container, 
+            select, 
+            .table-cell:last-child, 
+            .table-header-cell:last-child, 
+            .link-icon-btn,
+            footer {
+                display: none !important;
+            }
+            body { 
+                background: white; 
+                padding: 0;
+                margin: 0;
+            }
+            main { 
+                padding: 0 !important; 
+                max-width: 100% !important;
+            }
+            .report-table-container { 
+                box-shadow: none; 
+                border: 1px solid #000;
+                border-radius: 0;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            .table-header-cell, .table-cell {
+                border: 1px solid #ddd;
+                padding: 6px 8px;
+                color: black !important;
+            }
+            .badge-status {
+                border: 1px solid #ccc;
+                color: black !important;
+                background: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="hero-section">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                <div class="flex items-center gap-5">
+                    <div class="bg-indigo-500 p-4 rounded-2xl shadow-xl">
+                        <i data-lucide="clipboard-list" class="w-10 h-10 text-white"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-black tracking-tight mb-0">職業安全證照管理系統</h1>
+                        <p class="text-slate-400 text-sm font-medium tracking-wide uppercase opacity-80 mb-1">Occupational Safety Certificate Management System</p>
+                        <div class="flex flex-wrap gap-3 mt-2">
+                            <span class="btn-pill"><i data-lucide="calendar" class="w-4 h-4"></i> <span id="current-date-display">---- -- --</span></span>
+                            <span class="btn-pill"><i data-lucide="users" class="w-4 h-4"></i> 全體員工</span>
+                            <span id="admin-badge" class="btn-pill bg-blue-600/30 border-blue-400/50"><i data-lucide="eye" class="w-4 h-4"></i> 檢視模式</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <div class="flex flex-wrap gap-3 items-center justify-end">
+                        <button id="auto-update-btn" onclick="startAutoUpdate()" class="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-4 py-2.5 rounded-xl font-bold text-sm hover:bg-indigo-500/40 transition flex items-center gap-2">
+                            <i data-lucide="refresh-cw" class="w-4 h-4"></i> <span>同步數據</span>
+                        </button>
+
+                        <button id="login-toggle-btn" onclick="openLoginModal()" class="bg-white text-slate-800 px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg hover:bg-slate-100 transition">
+                            管理者登入
+                        </button>
+                        
+                        <div class="flex gap-2">
+                            <button id="export-btn" onclick="exportToExcel()" class="bg-indigo-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm hover:bg-indigo-700 transition flex items-center gap-2 min-w-[120px] justify-center">
+                                <i data-lucide="download" class="w-4 h-4"></i> <span>匯出報表</span>
+                            </button>
+                            <button id="print-btn" onclick="window.print()" class="bg-slate-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-700 transition flex items-center gap-2 min-w-[120px] justify-center shadow-lg">
+                                <i data-lucide="printer" class="w-4 h-4"></i> <span>列印報告</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end gap-2">
+                        <button onclick="exportJSON()" class="db-action-btn">
+                            <i data-lucide="file-json" class="w-3.5 h-3.5"></i> 導出備份
+                        </button>
+                        <button onclick="triggerImportJSON()" class="db-action-btn">
+                            <i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i> 導入備份
+                        </button>
+                        <input type="file" id="json-file-input" class="hidden" accept=".json" onchange="importJSON(event)">
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-10">
+                <div class="flex items-center gap-3 bg-white/5 p-4 rounded-2xl border border-white/10">
+                    <div class="bg-blue-500/20 p-2 rounded-full"><i data-lucide="files" class="w-5 h-5 text-blue-400"></i></div>
+                    <div><p class="text-xs text-slate-400">總證照數</p><p class="text-xl font-bold" id="stat-total">0</p></div>
+                </div>
+                <div class="flex items-center gap-3 bg-white/5 p-4 rounded-2xl border border-white/10">
+                    <div class="bg-red-500/20 p-2 rounded-full"><i data-lucide="alert-circle" class="w-5 h-5 text-red-400"></i></div>
+                    <div><p class="text-xs text-slate-400">已過期</p><p class="text-xl font-bold text-red-400" id="stat-expired">0</p></div>
+                </div>
+                <div class="flex items-center gap-3 bg-white/5 p-4 rounded-2xl border border-white/10">
+                    <div class="bg-amber-500/20 p-2 rounded-full"><i data-lucide="clock" class="w-5 h-5 text-amber-400"></i></div>
+                    <div><p class="text-xs text-slate-400">待受訓</p><p class="text-xl font-bold text-amber-400" id="stat-warning">0</p></div>
+                </div>
+                <div class="flex items-center gap-3 bg-white/5 p-4 rounded-2xl border border-white/10">
+                    <div class="bg-green-500/20 p-2 rounded-full"><i data-lucide="check-circle" class="w-5 h-5 text-green-400"></i></div>
+                    <div><p class="text-xs text-slate-400">有效中</p><p class="text-xl font-bold text-green-400" id="stat-valid">0</p></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-6 md:p-8">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <div class="flex items-center gap-4">
+                <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                    <i data-lucide="table-2" class="w-5 h-5"></i> 證照清單明細報表
+                </h2>
+                <button id="add-person-btn" onclick="openAddModal()" class="hidden bg-emerald-600 text-white px-4 py-1.5 rounded-lg font-bold text-sm hover:bg-emerald-700 transition flex items-center gap-2 shadow-sm">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i> 新增人員
+                </button>
+            </div>
+            <div class="flex flex-1 justify-end gap-3 w-full flex-wrap">
+                <div class="search-container border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 ml-2"></i>
+                    <input type="text" id="searchInput" oninput="renderReport()" placeholder="搜尋姓名、證號..." class="w-full p-2 text-sm outline-none bg-transparent">
+                </div>
+                <select id="itemFilter" onchange="renderReport()" class="bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-sm min-w-[150px]">
+                    <option value="">所有項目</option>
+                </select>
+                <select id="statusFilter" onchange="renderReport()" class="bg-white border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-sm">
+                    <option value="">所有狀態</option>
+                    <option value="效期內">有效</option>
+                    <option value="待受訓">需注意 (待受訓)</option>
+                    <option value="已過期">已過期</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="report-table-container">
+            <div class="overflow-x-auto">
+                <table class="w-full border-collapse min-w-[1000px]">
+                    <thead>
+                        <tr>
+                            <th class="table-header-cell w-16">項次</th>
+                            <th class="table-header-cell">作業單位</th>
+                            <th class="table-header-cell">姓名</th>
+                            <th class="table-header-cell">訓練項目</th>
+                            <th class="table-header-cell">證書號碼</th>
+                            <th class="table-header-cell">複訓週期</th>
+                            <th class="table-header-cell">上次受訓日期</th>
+                            <th class="table-header-cell">下次複訓日期</th>
+                            <th class="table-header-cell text-center">狀態</th>
+                            <th class="table-header-cell text-center">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="report-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- 頁尾資訊 -->
+    <footer class="max-w-7xl mx-auto px-8 pb-10 pt-4 flex flex-col items-center text-xs text-slate-400 font-medium gap-1">
+        <div>© 2026 職業安全衛生室｜職業安全證照管理系統</div>
+        <div>Developed by Sam Sun</div>
+    </footer>
+
+    <!-- 檔案預覽 Modal -->
+    <div id="file-preview-overlay" class="fixed inset-0 bg-black/90 hidden flex flex-col items-center justify-center p-4 md:p-10 text-white animate-in fade-in duration-200 z-[400]">
+        <div class="w-full max-w-5xl flex justify-between items-center mb-4">
+            <div>
+                <h3 id="preview-filename" class="text-lg font-bold">檔案預覽</h3>
+                <p id="preview-meta" class="text-xs text-slate-400">附件內容</p>
+            </div>
+            <button onclick="closeFilePreview()" class="bg-white/10 hover:bg-white/20 p-2 rounded-full transition">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+        <div id="preview-content-area" class="w-full max-w-5xl flex-1 bg-white rounded-xl overflow-hidden shadow-2xl flex items-center justify-center text-slate-800"></div>
+        <div class="mt-6 flex gap-4">
+            <button onclick="closeFilePreview()" class="bg-indigo-600 hover:bg-indigo-700 px-8 py-3 rounded-xl font-bold transition shadow-lg">關閉視窗</button>
+        </div>
+    </div>
+
+    <!-- 更新動畫 Modal -->
+    <div id="update-animation-modal" class="fixed inset-0 modal-overlay hidden flex items-center justify-center z-[300] p-4">
+        <div class="bg-slate-900 p-10 rounded-3xl w-full max-w-sm shadow-2xl scale-in-center text-center relative overflow-hidden">
+            <div class="scan-line"></div>
+            <div class="relative z-10">
+                <div class="w-20 h-20 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
+                    <i data-lucide="database" class="w-10 h-10"></i>
+                </div>
+                <h2 class="text-xl font-black text-white mb-2">系統數據同步中</h2>
+                <div class="space-y-2">
+                    <p class="text-indigo-300/60 text-xs font-mono">SYNCING INDEXEDDB...</p>
+                    <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                        <div id="update-progress-bar" class="bg-indigo-500 h-full" style="width: 0%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 同步完成提示 Modal -->
+    <div id="sync-success-modal" class="fixed inset-0 modal-overlay hidden flex items-center justify-center z-[600] p-4">
+        <div class="bg-white p-8 rounded-3xl w-full max-w-xs shadow-2xl scale-in-center text-center">
+            <div class="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="check-circle" class="w-8 h-8"></i>
+            </div>
+            <h2 class="text-xl font-black text-slate-800 mb-2">資料同步完成</h2>
+            <button onclick="closeSyncSuccessModal()" class="w-full bg-slate-800 text-white py-3 rounded-xl font-bold hover:bg-slate-900 transition shadow-lg">確定</button>
+        </div>
+    </div>
+
+    <!-- 登入 Modal -->
+    <div id="login-modal" class="fixed inset-0 modal-overlay hidden flex items-center justify-center z-[100] p-4">
+        <div class="bg-white p-8 rounded-3xl w-full max-w-sm shadow-2xl scale-in-center">
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-black text-slate-800">安全驗證</h2>
+                <p class="text-slate-400 text-sm">請輸入管理密碼以啟動編輯權限</p>
+            </div>
+            <input type="password" id="login-pwd" onkeydown="if(event.key==='Enter') checkPassword()" class="w-full border border-slate-200 rounded-xl p-4 text-center text-2xl tracking-[0.5em] focus:ring-2 focus:ring-indigo-500 outline-none mb-4" placeholder="••••">
+            <button onclick="checkPassword()" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">確認登入</button>
+            <div class="flex justify-between items-center mt-4 px-1">
+                <button onclick="openChangePasswordModal()" class="text-indigo-600 text-xs font-bold hover:underline">修改密碼?</button>
+                <button onclick="closeLoginModal()" class="text-slate-400 text-xs hover:text-slate-600 transition">取消返回</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 修改密碼 Modal -->
+    <div id="change-pwd-modal" class="fixed inset-0 modal-overlay hidden flex items-center justify-center z-[500] p-4">
+        <div class="bg-white p-8 rounded-3xl w-full max-w-sm shadow-2xl scale-in-center">
+            <div class="text-center mb-6">
+                <h2 class="text-xl font-black text-slate-800">修改管理密碼</h2>
+                <p class="text-slate-400 text-sm">請輸入舊密碼與新密碼</p>
+            </div>
+            <div class="space-y-4">
+                <input type="password" id="old-pwd" class="w-full border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="目前的密碼">
+                <input type="password" id="new-pwd" class="w-full border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="新密碼">
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="saveNewPassword()" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition">儲存修改</button>
+                <button onclick="closeChangePasswordModal()" class="flex-1 bg-slate-100 text-slate-600 py-3 rounded-xl font-bold hover:bg-slate-200 transition">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 附件管理 Modal -->
+    <div id="attachment-modal" class="fixed inset-0 modal-overlay hidden flex items-center justify-center z-[150] p-4">
+        <div class="bg-white p-8 rounded-3xl w-full max-w-md shadow-2xl scale-in-center">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h2 class="text-xl font-black text-slate-800">附件資料管理</h2>
+                    <p class="text-xs text-slate-400" id="attach-record-info">姓名 - 訓練項目</p>
+                </div>
+                <button onclick="closeAttachmentModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div id="upload-area" class="mb-6">
+                <div id="drop-zone" class="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center hover:border-indigo-400 transition cursor-pointer group"
+                     onclick="document.getElementById('attach-file-input').click()">
+                    <input type="file" id="attach-file-input" class="hidden" multiple accept=".pdf,.png,.jpg,.jpeg" onchange="handleFileUpload(event)">
+                    <div class="bg-slate-50 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-indigo-50">
+                        <i data-lucide="upload-cloud" class="w-6 h-6 text-slate-400 group-hover:text-indigo-500"></i>
+                    </div>
+                    <p class="text-sm font-bold text-slate-600">點擊或拖移檔案至此</p>
+                    <p class="text-[10px] text-slate-400 mt-1">支援 PDF, PNG, JPG (IndexedDB 儲存)</p>
+                </div>
+            </div>
+            <div class="space-y-3 max-h-[300px] overflow-y-auto pr-2" id="attachment-list"></div>
+            <button onclick="closeAttachmentModal()" class="w-full mt-6 bg-slate-800 text-white py-3 rounded-xl font-bold hover:bg-slate-900 transition">完成</button>
+        </div>
+    </div>
+
+    <!-- 編輯紀錄 Modal -->
+    <div id="edit-modal" class="fixed inset-0 modal-overlay hidden flex items-center justify-center z-[120] p-4">
+        <div class="bg-white p-8 rounded-3xl w-full max-w-lg shadow-2xl scale-in-center max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-black text-slate-800" id="modal-title">編輯紀錄明細</h2>
+                <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <form id="edit-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="hidden" id="edit-id">
+                <div class="md:col-span-1">
+                    <label class="block text-xs font-bold text-slate-500 mb-1">作業單位</label>
+                    <input type="text" id="edit-dept" class="w-full border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500" placeholder="例如：物流部">
+                </div>
+                <div class="md:col-span-1">
+                    <label class="block text-xs font-bold text-slate-500 mb-1">姓名</label>
+                    <input type="text" id="edit-name" class="w-full border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-bold text-slate-500 mb-1">訓練項目</label>
+                    <input type="text" id="edit-item" class="w-full border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-bold text-slate-500 mb-1">證書號碼</label>
+                    <input type="text" id="edit-certNo" class="w-full border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">複訓週期 (例如: 3Y)</label>
+                    <input type="text" id="edit-cycle" class="w-full border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-1">上次受訓日期</label>
+                    <input type="date" id="edit-lastDate" class="w-full border border-slate-200 rounded-xl p-3 outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="md:col-span-2 flex gap-3 mt-4">
+                    <button type="button" onclick="saveEdit()" id="save-btn" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition">更新資料</button>
+                    <button type="button" id="remove-btn" onclick="confirmRemove()" class="bg-red-50 text-red-500 px-6 py-3 rounded-xl font-bold hover:bg-red-100 transition flex items-center gap-2">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i> 移除
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+<script>
+    // --- IndexedDB 核心邏輯 ---
+    const DB_NAME = 'OSH_Management_System';
+    const DB_VERSION = 1;
+    const STORE_RECORDS = 'records';
+    const STORE_CONFIG = 'config';
+    let db;
+
+    /**
+     * 初始化資料庫
+     */
+    async function initDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+            request.onerror = (event) => reject('IndexedDB 啟動失敗：' + event.target.error);
+
+            request.onupgradeneeded = (event) => {
+                const dbInstance = event.target.result;
+                if (!dbInstance.objectStoreNames.contains(STORE_RECORDS)) {
+                    dbInstance.createObjectStore(STORE_RECORDS, { keyPath: 'id' });
+                }
+                if (!dbInstance.objectStoreNames.contains(STORE_CONFIG)) {
+                    dbInstance.createObjectStore(STORE_CONFIG, { keyPath: 'key' });
+                }
+            };
+
+            request.onsuccess = (event) => {
+                db = event.target.result;
+                resolve(db);
+            };
+        });
+    }
+
+    async function fetchAllRecords() {
+        return new Promise((resolve) => {
+            const transaction = db.transaction([STORE_RECORDS], 'readonly');
+            const store = transaction.objectStore(STORE_RECORDS);
+            const request = store.getAll();
+            request.onsuccess = () => resolve(request.result || []);
+        });
+    }
+
+    async function persistAllRecords(recordsArray) {
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction([STORE_RECORDS], 'readwrite');
+            const store = transaction.objectStore(STORE_RECORDS);
+            const clearReq = store.clear();
+            clearReq.onsuccess = () => {
+                recordsArray.forEach(record => store.add(record));
+            };
+            transaction.oncomplete = () => resolve();
+            transaction.onerror = () => reject('資料保存失敗');
+        });
+    }
+
+    async function getConfig(key) {
+        return new Promise((resolve) => {
+            const transaction = db.transaction([STORE_CONFIG], 'readonly');
+            const store = transaction.objectStore(STORE_CONFIG);
+            const request = store.get(key);
+            request.onsuccess = () => resolve(request.result ? request.result.value : null);
+        });
+    }
+
+    async function setConfig(key, value) {
+        return new Promise((resolve) => {
+            const transaction = db.transaction([STORE_CONFIG], 'readwrite');
+            const store = transaction.objectStore(STORE_CONFIG);
+            store.put({ key, value });
+            transaction.oncomplete = () => resolve();
+        });
+    }
+
+    // --- 全域變數 ---
+    let isAdmin = false;
+    let systemPassword = "1068";
+    let records = [];
+    let currentAttachRecordId = null;
+
+    // --- 圖片內容數據集 ---
+    const imageDataset = [
+        { id: 1, dept: "電子部", name: "余謙琼", item: "甲種業務主管", certNo: "", cycle: "6H/2Y", lastDate: "", attachments: [] },
+        { id: 2, dept: "電子部", name: "黃俊淵", item: "甲種業務主管", certNo: "108N0151302102", cycle: "6H/2Y", lastDate: "2024-08-06", attachments: [] },
+        { id: 3, dept: "電子部", name: "黃俊淵", item: "急救人員", certNo: "北市勞職字第10638825400號函認可", cycle: "3H/3Y", lastDate: "2023-11-14", attachments: [] },
+        { id: 4, dept: "物流部", name: "鍾嘉駿", item: "急救人員", certNo: "北市勞職字第10638825400號函認可", cycle: "3H/3Y", lastDate: "2023-12-08", attachments: [] },
+        { id: 5, dept: "電子部", name: "莊勝男", item: "急救人員", certNo: "台北市政府北市勞職字第1116084321號", cycle: "3H/3Y", lastDate: "2025-10-17", attachments: [] },
+        { id: 6, dept: "電子部", name: "余謙琼", item: "急救人員", certNo: "台北市政府北市勞職字第1116084518號", cycle: "3H/3Y", lastDate: "2025-10-17", attachments: [] },
+        { id: 7, dept: "系統部", name: "陳宏毅", item: "急救人員", certNo: "中北訓證字第1081066043號", cycle: "3H/3Y", lastDate: "2025-10-17", attachments: [] },
+        { id: 8, dept: "系統部", name: "余建銘", item: "急救人員", certNo: "中北訓證字第1081066042號", cycle: "3H/3Y", lastDate: "2025-09-17", attachments: [] },
+        { id: 9, dept: "系統部", name: "謝青翰", item: "急救人員", certNo: "北市勞職字第10638825400號函認可", cycle: "3H/3Y", lastDate: "2023-11-14", attachments: [] },
+        { id: 10, dept: "品保部", name: "陳彥廷", item: "游離輻射操作人員", certNo: "福訓字第00021號", cycle: "3H/1Y", lastDate: "2025-10-29", attachments: [] },
+        { id: 11, dept: "品保部", name: "陳家和", item: "游離輻射操作人員", certNo: "(華)輻安訓字第0896號", cycle: "3H/1Y", lastDate: "2025-09-24", attachments: [] },
+        { id: 12, dept: "品保部", name: "林晉緯", item: "游離輻射操作人員", certNo: "一一0(華)輻安訓字第0478號", cycle: "3H/1Y", lastDate: "2025-07-18", attachments: [] },
+        { id: 13, dept: "品保部", name: "楊賽亮", item: "游離輻射操作人員", certNo: "台能輻訓字第105416號", cycle: "3H/1Y", lastDate: "", attachments: [] },
+        { id: 14, dept: "品保部", name: "姚若蓁", item: "游離輻射操作人員", certNo: "一零八(華)輻安訓字第0054號", cycle: "3H/1Y", lastDate: "2025-09-24", attachments: [] },
+        { id: 15, dept: "電子部", name: "吳明毅", item: "游離輻射操作人員", certNo: "台能輻訓字第111308號", cycle: "3H/1Y", lastDate: "2025-10-29", attachments: [] },
+        { id: 16, dept: "電子部", name: "陳彥晟", item: "游離輻射操作人員", certNo: "台能輻訓字第111338號", cycle: "3H/1Y", lastDate: "2025-09-24", attachments: [] },
+        { id: 17, dept: "電子部", name: "藍煥文", item: "游離輻射操作人員", certNo: "台能輻訓字第111493號", cycle: "3H/1Y", lastDate: "2025-10-29", attachments: [] },
+        { id: 18, dept: "電子部", name: "余謙琼", item: "游離輻射操作人員", certNo: "台能輻訓字第00021號", cycle: "3H/1Y", lastDate: "2025-10-29", attachments: [] },
+        { id: 19, dept: "電子部", name: "周碧君", item: "有機溶劑作業主管", certNo: "", cycle: "6H/3Y", lastDate: "", attachments: [] },
+        { id: 20, dept: "管理部", name: "阮立誠", item: "防火管理人", certNo: "北市消預字第1133000483號函證書字號:A113初00125號", cycle: "6H/3Y", lastDate: "2024-01-09", attachments: [] },
+        { id: 21, dept: "職業安全衛生室", name: "孫惠星", item: "職業安全管理師", certNo: "勞訓證字第22446-18號", cycle: "12H/2Y", lastDate: "2025-05-08", attachments: [] }
+    ];
+
+    // --- UI 功能與邏輯 ---
+
+    function initIcons() { if (typeof lucide !== 'undefined') lucide.createIcons(); }
+
+    function setTodayDate() {
+        const now = new Date();
+        const yyyy = now.getFullYear();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        document.getElementById('current-date-display').innerText = `${yyyy}-${mm}-${dd}`;
+    }
+
+    function calculateNextDate(lastDateStr, cycleStr) {
+        if (!lastDateStr) return null;
+        const lastDate = new Date(lastDateStr);
+        if (isNaN(lastDate.getTime())) return null;
+        
+        let years = 0;
+        if (cycleStr.includes('Y')) {
+            years = parseInt(cycleStr.split('/').pop().replace('Y', '')) || 0;
+        }
+        
+        const nextDate = new Date(lastDate);
+        nextDate.setFullYear(lastDate.getFullYear() + years);
+        return nextDate;
+    }
+
+    function getStatusInfo(nextDate, lastDateStr) {
+        if (!lastDateStr) return { label: '待受訓', bg: 'bg-amber-100', text: 'text-amber-600' };
+        const now = new Date();
+        const warningDate = new Date();
+        warningDate.setMonth(now.getMonth() + 3);
+
+        if (nextDate < now) return { label: '已過期', bg: 'bg-red-100', text: 'text-red-600' };
+        if (nextDate < warningDate) return { label: '待受訓', bg: 'bg-amber-100', text: 'text-amber-600' };
+        return { label: '效期內', bg: 'bg-green-100', text: 'text-green-600' };
+    }
+
+    function updateItemFilter() {
+        const itemFilter = document.getElementById('itemFilter');
+        const currentVal = itemFilter.value;
+        const items = [...new Set(records.map(r => r.item))].filter(Boolean).sort();
+        
+        itemFilter.innerHTML = '<option value="">所有項目</option>';
+        items.forEach(item => {
+            const option = document.createElement('option');
+            option.value = item;
+            option.textContent = item;
+            if (item === currentVal) option.selected = true;
+            itemFilter.appendChild(option);
+        });
+    }
+
+    async function renderReport() {
+        const tableBody = document.getElementById('report-body');
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const statusFilter = document.getElementById('statusFilter').value;
+        const itemFilter = document.getElementById('itemFilter').value;
+        
+        tableBody.innerHTML = '';
+        let stats = { total: 0, expired: 0, warning: 0, valid: 0 };
+        let visibleCount = 0;
+
+        if (records.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="10" class="p-20 text-center text-slate-400">目前尚無資料。</td></tr>';
+        } else {
+            records.forEach(record => {
+                const nextDate = calculateNextDate(record.lastDate, record.cycle);
+                const status = getStatusInfo(nextDate, record.lastDate);
+                const hasAttachments = record.attachments && record.attachments.length > 0;
+                
+                stats.total++;
+                if (status.label === '已過期') stats.expired++;
+                else if (status.label === '待受訓') stats.warning++;
+                else stats.valid++;
+
+                const matchesSearch = (record.name || "").toLowerCase().includes(searchTerm) || 
+                                    (record.item || "").toLowerCase().includes(searchTerm) || 
+                                    (record.certNo || "").toLowerCase().includes(searchTerm);
+                const matchesStatus = statusFilter === "" || status.label === statusFilter;
+                const matchesItem = itemFilter === "" || record.item === itemFilter;
+
+                if (matchesSearch && matchesStatus && matchesItem) {
+                    visibleCount++;
+                    const displayNextDate = nextDate ? nextDate.toISOString().split('T')[0] : "待補件";
+                    const row = document.createElement('tr');
+                    row.className = "table-row";
+                    row.innerHTML = `
+                        <td class="table-cell font-mono text-slate-400 text-sm">${visibleCount}</td>
+                        <td class="table-cell font-medium text-slate-500">${record.dept}</td>
+                        <td class="table-cell font-bold text-slate-800">${record.name}</td>
+                        <td class="table-cell font-semibold text-indigo-600">${record.item}</td>
+                        <td class="table-cell">
+                            <div class="flex items-center justify-between group max-w-[180px]">
+                                <span class="text-xs font-mono text-slate-400 truncate mr-2" title="${record.certNo}">${record.certNo || '---'}</span>
+                                <button onclick="handleLinkClick(${record.id})" 
+                                        class="link-icon-btn p-1.5 rounded-lg transition-colors ${hasAttachments ? 'text-blue-500 hover:bg-blue-50' : 'text-slate-300'}">
+                                    <i data-lucide="link" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </div>
+                        </td>
+                        <td class="table-cell text-slate-500">${record.cycle}</td>
+                        <td class="table-cell text-slate-500">${record.lastDate || '<span class="text-red-300">待補</span>'}</td>
+                        <td class="table-cell font-bold ${status.text}">${displayNextDate}</td>
+                        <td class="table-cell text-center">
+                            <span class="badge-status ${status.bg} ${status.text}">
+                                ${status.label}
+                            </span>
+                        </td>
+                        <td class="table-cell text-center">
+                            <button onclick="openEditModal(${record.id})" class="p-2 hover:bg-slate-100 text-slate-400 hover:text-indigo-600 rounded-lg transition">
+                                <i data-lucide="${isAdmin ? 'edit-3' : 'settings'}" class="w-4 h-4"></i>
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                }
+            });
+        }
+
+        document.getElementById('stat-total').innerText = stats.total;
+        document.getElementById('stat-expired').innerText = stats.expired;
+        document.getElementById('stat-warning').innerText = stats.warning;
+        document.getElementById('stat-valid').innerText = stats.valid;
+        
+        updateItemFilter();
+        initIcons();
+    }
+
+    function handleLinkClick(id) {
+        if (isAdmin) { openAttachmentModal(id); } else {
+            const record = records.find(r => r.id === id);
+            if (record && record.attachments && record.attachments.length > 0) {
+                openFilePreview(record.attachments[0], record.name);
+            }
+        }
+    }
+
+    function openAttachmentModal(id) {
+        currentAttachRecordId = id;
+        const record = records.find(r => r.id === id);
+        if (!record) return;
+        document.getElementById('attach-record-info').innerText = `${record.name} - ${record.item}`;
+        renderAttachmentList();
+        document.getElementById('attachment-modal').classList.remove('hidden');
+        initIcons();
+    }
+
+    async function closeAttachmentModal() {
+        document.getElementById('attachment-modal').classList.add('hidden');
+        currentAttachRecordId = null;
+        await persistAllRecords(records);
+        renderReport();
+    }
+
+    function renderAttachmentList() {
+        const listContainer = document.getElementById('attachment-list');
+        const record = records.find(r => r.id === currentAttachRecordId);
+        listContainer.innerHTML = '';
+        if (!record.attachments || record.attachments.length === 0) {
+            listContainer.innerHTML = '<p class="text-center text-slate-400 py-4 text-sm">尚未上傳任何檔案</p>';
+            return;
+        }
+        record.attachments.forEach((file, index) => {
+            const item = document.createElement('div');
+            item.className = "flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 group";
+            item.innerHTML = `
+                <div class="flex items-center gap-3 overflow-hidden">
+                    <div class="bg-white p-2 rounded-lg border border-slate-200"><i data-lucide="${file.type === 'pdf' ? 'file-text' : 'image'}" class="w-4 h-4 text-slate-400"></i></div>
+                    <span class="text-xs font-bold text-slate-700 truncate">${file.name}</span>
+                </div>
+                <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                    <button onclick='openFilePreview(${JSON.stringify(file)}, "${record.name}")' class="p-1.5 text-slate-400 hover:text-blue-500"><i data-lucide="external-link" class="w-3.5 h-3.5"></i></button>
+                    <button onclick="removeAttachment(${index})" class="p-1.5 text-slate-400 hover:text-red-500"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                </div>`;
+            listContainer.appendChild(item);
+        });
+        initIcons();
+    }
+
+    function handleFileUpload(event) {
+        const filesArray = Array.from(event.target.files);
+        const record = records.find(r => r.id === currentAttachRecordId);
+        filesArray.forEach(file => {
+            const type = file.type.includes('pdf') ? 'pdf' : (file.type.includes('image') ? 'image' : 'unknown');
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                record.attachments.push({ name: file.name, url: e.target.result, type: type });
+                renderAttachmentList();
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function removeAttachment(index) {
+        if (confirm("確定要移除此附件嗎？")) {
+            const record = records.find(r => r.id === currentAttachRecordId);
+            record.attachments.splice(index, 1);
+            renderAttachmentList();
+        }
+    }
+
+    function openFilePreview(file, personName) {
+        const overlay = document.getElementById('file-preview-overlay');
+        const contentArea = document.getElementById('preview-content-area');
+        document.getElementById('preview-filename').innerText = file.name;
+        document.getElementById('preview-meta').innerText = `${personName} 的相關證件附件`;
+        contentArea.innerHTML = '';
+        if (file.type === 'pdf') {
+            contentArea.innerHTML = `<iframe src="${file.url}" class="w-full h-full border-none"></iframe>`;
+        } else {
+            contentArea.innerHTML = `<div class="overflow-auto w-full h-full flex items-center justify-center p-4"><img src="${file.url}" class="max-w-full max-h-full object-contain"></div>`;
+        }
+        overlay.classList.remove('hidden');
+        initIcons();
+    }
+
+    function closeFilePreview() { document.getElementById('file-preview-overlay').classList.add('hidden'); }
+
+    function exportToExcel() {
+        if (records.length === 0) { alert('目前沒有數據可匯出'); return; }
+        let csvContent = "\uFEFF";
+        csvContent += "項次,作業單位,姓名,訓練項目,證書號碼,複訓週期,上次受訓日期,下次複訓日期,狀態\n";
+        records.forEach((r, index) => {
+            const nextDate = calculateNextDate(r.lastDate, r.cycle);
+            const status = getStatusInfo(nextDate, r.lastDate).label;
+            const displayNextDate = nextDate ? nextDate.toISOString().split('T')[0] : "待補件";
+            csvContent += `${index + 1},"${r.dept}","${r.name}","${r.item}","${r.certNo}","${r.cycle}",${r.lastDate},${displayNextDate},${status}\n`;
+        });
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `證照管理報表_${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+    }
+
+    function openLoginModal() { document.getElementById('login-modal').classList.remove('hidden'); setTimeout(() => document.getElementById('login-pwd').focus(), 100); }
+    function closeLoginModal() { document.getElementById('login-modal').classList.add('hidden'); }
+    function checkPassword() {
+        if (document.getElementById('login-pwd').value === systemPassword) { 
+            isAdmin = true; closeLoginModal(); updateUIForAdmin(); renderReport(); 
+        } else { alert('密碼錯誤'); }
+        document.getElementById('login-pwd').value = '';
+    }
+
+    function openChangePasswordModal() { document.getElementById('change-pwd-modal').classList.remove('hidden'); }
+    function closeChangePasswordModal() { document.getElementById('change-pwd-modal').classList.add('hidden'); }
+    async function saveNewPassword() {
+        if (document.getElementById('old-pwd').value !== systemPassword) { alert("舊密碼不正確"); return; }
+        systemPassword = document.getElementById('new-pwd').value;
+        await setConfig('admin_password', systemPassword);
+        alert("密碼已更新成功！");
+        closeChangePasswordModal();
+    }
+
+    function updateUIForAdmin() {
+        document.getElementById('admin-badge').innerHTML = '<i data-lucide="unlock" class="w-4 h-4 text-blue-400"></i> 管理模式';
+        const loginBtn = document.getElementById('login-toggle-btn');
+        loginBtn.innerText = "完成並登出系統";
+        loginBtn.className = "bg-red-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg hover:bg-red-700 transition";
+        loginBtn.onclick = async () => { await persistAllRecords(records); showSyncSuccess(); };
+        document.getElementById('add-person-btn').classList.remove('hidden');
+        initIcons();
+    }
+
+    function showSyncSuccess() { document.getElementById('sync-success-modal').classList.remove('hidden'); initIcons(); }
+    function closeSyncSuccessModal() { document.getElementById('sync-success-modal').classList.add('hidden'); logout(); }
+    function logout() {
+        isAdmin = false;
+        document.getElementById('admin-badge').innerHTML = '<i data-lucide="eye" class="w-4 h-4"></i> 檢視模式';
+        const loginBtn = document.getElementById('login-toggle-btn');
+        loginBtn.innerText = "管理者登入";
+        loginBtn.className = "bg-white text-slate-800 px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg hover:bg-slate-100 transition";
+        loginBtn.onclick = openLoginModal;
+        document.getElementById('add-person-btn').classList.add('hidden');
+        renderReport();
+    }
+
+    function openEditModal(id) {
+        if (!isAdmin) { openLoginModal(); return; }
+        const record = records.find(r => r.id === id);
+        if (!record) return;
+        document.getElementById('modal-title').innerText = "編輯紀錄明細";
+        document.getElementById('edit-id').value = record.id;
+        document.getElementById('edit-dept').value = record.dept;
+        document.getElementById('edit-name').value = record.name;
+        document.getElementById('edit-item').value = record.item;
+        document.getElementById('edit-certNo').value = record.certNo;
+        document.getElementById('edit-cycle').value = record.cycle;
+        document.getElementById('edit-lastDate').value = record.lastDate;
+        document.getElementById('save-btn').innerText = "更新資料";
+        document.getElementById('remove-btn').classList.remove('hidden');
+        document.getElementById('edit-modal').classList.remove('hidden');
+        initIcons();
+    }
+
+    function openAddModal() {
+        document.getElementById('modal-title').innerText = "新增人員紀錄";
+        document.getElementById('edit-id').value = "";
+        document.getElementById('edit-form').reset();
+        document.getElementById('save-btn').innerText = "新增紀錄";
+        document.getElementById('remove-btn').classList.add('hidden');
+        document.getElementById('edit-modal').classList.remove('hidden');
+        initIcons();
+    }
+
+    function closeEditModal() { document.getElementById('edit-modal').classList.add('hidden'); }
+
+    async function saveEdit() {
+        const idVal = document.getElementById('edit-id').value;
+        const data = {
+            dept: document.getElementById('edit-dept').value || "未設定",
+            name: document.getElementById('edit-name').value || "未命名",
+            item: document.getElementById('edit-item').value || "未設定項目",
+            certNo: document.getElementById('edit-certNo').value || "無",
+            cycle: document.getElementById('edit-cycle').value || "1Y",
+            lastDate: document.getElementById('edit-lastDate').value || ""
+        };
+        if (idVal === "") {
+            const newId = records.length > 0 ? Math.max(...records.map(r => r.id)) + 1 : 1;
+            records.push({ id: newId, ...data, attachments: [] });
+        } else {
+            const id = parseInt(idVal);
+            const idx = records.findIndex(r => r.id === id);
+            if (idx !== -1) records[idx] = { ...records[idx], ...data };
+        }
+        await persistAllRecords(records);
+        renderReport();
+        closeEditModal();
+    }
+
+    async function confirmRemove() {
+        if(confirm("確定要移除嗎？")) {
+            records = records.filter(r => r.id !== parseInt(document.getElementById('edit-id').value));
+            await persistAllRecords(records);
+            renderReport();
+            closeEditModal();
+        }
+    }
+
+    function exportJSON() {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(new Blob([JSON.stringify(records, null, 2)], { type: 'application/json' }));
+        link.download = `OSH_Backup_${new Date().toISOString().split('T')[0]}.json`;
+        link.click();
+    }
+
+    function triggerImportJSON() { document.getElementById('json-file-input').click(); }
+    async function importJSON(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                records = JSON.parse(e.target.result);
+                await persistAllRecords(records);
+                renderReport();
+                alert("導入成功！");
+            } catch (err) { alert("導入失敗"); }
+        };
+        reader.readAsText(file);
+    }
+
+    // 展示用途：模擬同步數據並隨機設定幾位人員過期
+    async function startAutoUpdate() {
+        document.getElementById('update-animation-modal').classList.remove('hidden');
+        const pb = document.getElementById('update-progress-bar');
+        pb.style.width = '0%';
+        void pb.offsetWidth;
+        pb.classList.remove('animate-progress');
+        void pb.offsetWidth;
+        pb.classList.add('animate-progress');
+        
+        setTimeout(async () => { 
+            // 重新取得原始資料
+            records = await fetchAllRecords();
+            if (records.length === 0) records = [...imageDataset];
+
+            // 隨機挑選 3 個有日期的紀錄改為過期 (設定為 3 年前)
+            const recordsWithDates = records.filter(r => r.lastDate !== "");
+            if (recordsWithDates.length > 0) {
+                const shuffled = recordsWithDates.sort(() => 0.5 - Math.random());
+                const selected = shuffled.slice(0, 3);
+                
+                const threeYearsAgo = new Date();
+                threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
+                const expiredDateStr = threeYearsAgo.toISOString().split('T')[0];
+
+                selected.forEach(target => {
+                    const idx = records.findIndex(r => r.id === target.id);
+                    if (idx !== -1) records[idx].lastDate = expiredDateStr;
+                });
+            }
+
+            // 保存修改後的狀態到 DB
+            await persistAllRecords(records);
+            
+            document.getElementById('update-animation-modal').classList.add('hidden'); 
+            renderReport(); 
+        }, 3000);
+    }
+
+    window.onload = async () => { 
+        setTodayDate(); 
+        try {
+            await initDB();
+            const savedPwd = await getConfig('admin_password');
+            if (savedPwd) systemPassword = savedPwd;
+            
+            records = await fetchAllRecords();
+            if (records.length === 0) {
+                records = [...imageDataset];
+                await persistAllRecords(records);
+            }
+            renderReport(); 
+        } catch(e) { console.error('啟動失敗', e); }
+    };
+</script>
+</body>
+</html>
