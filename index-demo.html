@@ -152,6 +152,7 @@
         #drop-zone.drag-over {
             border-color: #6366f1;
             background-color: #f5f3ff;
+            transform: scale(1.02);
         }
 
         @media print {
@@ -427,7 +428,10 @@
             </div>
             <div id="upload-area" class="mb-6">
                 <div id="drop-zone" class="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center hover:border-indigo-400 transition cursor-pointer group"
-                     onclick="document.getElementById('attach-file-input').click()">
+                     onclick="document.getElementById('attach-file-input').click()"
+                     ondragover="handleDragOver(event)"
+                     ondragleave="handleDragLeave(event)"
+                     ondrop="handleDrop(event)">
                     <input type="file" id="attach-file-input" class="hidden" multiple accept=".pdf,.png,.jpg,.jpeg" onchange="handleFileUpload(event)">
                     <div class="bg-slate-50 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-indigo-50">
                         <i data-lucide="upload-cloud" class="w-6 h-6 text-slate-400 group-hover:text-indigo-500"></i>
@@ -769,11 +773,44 @@
         initIcons();
     }
 
+    // --- 拖拉檔案功能實現 ---
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        document.getElementById('drop-zone').classList.add('drag-over');
+    }
+
+    function handleDragLeave(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        document.getElementById('drop-zone').classList.remove('drag-over');
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        document.getElementById('drop-zone').classList.remove('drag-over');
+        
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles(files);
+    }
+
     function handleFileUpload(event) {
-        const filesArray = Array.from(event.target.files);
+        const files = event.target.files;
+        handleFiles(files);
+    }
+
+    function handleFiles(files) {
+        const filesArray = Array.from(files);
         const record = records.find(r => r.id === currentAttachRecordId);
+        if (!record) return;
+
         filesArray.forEach(file => {
             const type = file.type.includes('pdf') ? 'pdf' : (file.type.includes('image') ? 'image' : 'unknown');
+            // 只處理支援的格式
+            if (type === 'unknown') return;
+
             const reader = new FileReader();
             reader.onload = (e) => {
                 record.attachments.push({ name: file.name, url: e.target.result, type: type });
