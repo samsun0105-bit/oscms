@@ -426,8 +426,12 @@
                 <button onclick="closeAttachmentModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-6 h-6"></i></button>
             </div>
             <div id="upload-area" class="mb-6">
+                <!-- 拖拉區域 -->
                 <div id="drop-zone" class="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center hover:border-indigo-400 transition cursor-pointer group"
-                     onclick="document.getElementById('attach-file-input').click()">
+                     onclick="document.getElementById('attach-file-input').click()"
+                     ondragover="handleDragOver(event)"
+                     ondragleave="handleDragLeave(event)"
+                     ondrop="handleDrop(event)">
                     <input type="file" id="attach-file-input" class="hidden" multiple accept=".pdf,.png,.jpg,.jpeg" onchange="handleFileUpload(event)">
                     <div class="bg-slate-50 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-indigo-50">
                         <i data-lucide="upload-cloud" class="w-6 h-6 text-slate-400 group-hover:text-indigo-500"></i>
@@ -564,7 +568,7 @@
     let records = [];
     let currentAttachRecordId = null;
 
-    // --- 圖片內容一字不漏對應數據集 ---
+    // --- 圖片內容對應數據集 ---
     const imageDataset = [
         { id: 1, dept: "電子部", name: "余謙琼", item: "甲種業務主管", certNo: "", cycle: "6H/2Y", lastDate: "", attachments: [] },
         { id: 2, dept: "電子部", name: "黃俊淵", item: "甲種業務主管", certNo: "108N0151302102", cycle: "6H/2Y", lastDate: "2024-08-06", attachments: [] },
@@ -769,9 +773,42 @@
         initIcons();
     }
 
+    // --- 恢復拖拉功能相關函數 ---
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        document.getElementById('drop-zone').classList.add('drag-over');
+    }
+
+    function handleDragLeave(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        document.getElementById('drop-zone').classList.remove('drag-over');
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        document.getElementById('drop-zone').classList.remove('drag-over');
+        
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) {
+            processFiles(files);
+        }
+    }
+
     function handleFileUpload(event) {
-        const filesArray = Array.from(event.target.files);
+        const files = event.target.files;
+        if (files && files.length > 0) {
+            processFiles(files);
+        }
+    }
+
+    function processFiles(files) {
+        const filesArray = Array.from(files);
         const record = records.find(r => r.id === currentAttachRecordId);
+        if (!record) return;
+
         filesArray.forEach(file => {
             const type = file.type.includes('pdf') ? 'pdf' : (file.type.includes('image') ? 'image' : 'unknown');
             const reader = new FileReader();
@@ -973,7 +1010,6 @@
             if (savedPwd) systemPassword = savedPwd;
             
             records = await fetchAllRecords();
-            // 如果資料庫為空，則初始化圖片數據
             if (records.length === 0) {
                 records = imageDataset;
                 await persistAllRecords(records);
