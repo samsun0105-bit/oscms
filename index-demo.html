@@ -138,6 +138,17 @@
             border-color: rgba(255, 255, 255, 0.2);
         }
 
+        .btn-reset {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+        .btn-reset:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+
         .link-icon-btn {
             transition: transform 0.1s;
         }
@@ -217,7 +228,7 @@
                     </div>
                     <div>
                         <h1 class="text-3xl font-black tracking-tight mb-0">職業安全證照管理系統</h1>
-                        <p class="text-slate-400 text-sm font-medium tracking-wide uppercase opacity-80 mb-1">Occupational Safety Certificate Management System</p>
+                        <p class="text-slate-400 text-sm font-medium tracking-wide uppercase opacity-80 mb-1">Occupational Safety Certificate Management System - Demo Mode</p>
                         <div class="flex flex-wrap gap-3 mt-2">
                             <span class="btn-pill"><i data-lucide="calendar" class="w-4 h-4"></i> <span id="current-date-display">---- -- --</span></span>
                             <span class="btn-pill"><i data-lucide="users" class="w-4 h-4"></i> 全體員工</span>
@@ -247,6 +258,9 @@
                     </div>
                     
                     <div class="flex justify-end gap-2">
+                        <button onclick="resetSystem()" class="db-action-btn btn-reset">
+                            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> 重製系統
+                        </button>
                         <button onclick="exportJSON()" class="db-action-btn">
                             <i data-lucide="file-json" class="w-3.5 h-3.5"></i> 導出備份
                         </button>
@@ -773,7 +787,6 @@
         initIcons();
     }
 
-    // --- 拖拉檔案功能實現 ---
     function handleDragOver(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -808,7 +821,6 @@
 
         filesArray.forEach(file => {
             const type = file.type.includes('pdf') ? 'pdf' : (file.type.includes('image') ? 'image' : 'unknown');
-            // 只處理支援的格式
             if (type === 'unknown') return;
 
             const reader = new FileReader();
@@ -966,6 +978,34 @@
         }
     }
 
+    /**
+     * 重製系統功能
+     */
+    async function resetSystem() {
+        if (confirm("警告：此操作將清除所有自定義修改、新增的人員與附件檔案，並恢復至原始預設狀態。\n\n確定要重製系統嗎？")) {
+            try {
+                // 清除所有 Object Stores
+                const transRecords = db.transaction([STORE_RECORDS], 'readwrite');
+                transRecords.objectStore(STORE_RECORDS).clear();
+                
+                const transConfig = db.transaction([STORE_CONFIG], 'readwrite');
+                transConfig.objectStore(STORE_CONFIG).clear();
+
+                // 重新載入原始數據
+                records = JSON.parse(JSON.stringify(imageDataset));
+                await persistAllRecords(records);
+                
+                // 恢復初始密碼
+                systemPassword = "1068";
+                
+                alert("系統已成功重製為初始狀態。");
+                window.location.reload();
+            } catch (err) {
+                alert("重製過程中發生錯誤：" + err);
+            }
+        }
+    }
+
     function exportJSON() {
         const link = document.createElement('a');
         link.href = URL.createObjectURL(new Blob([JSON.stringify(records, null, 2)], { type: 'application/json' }));
@@ -989,7 +1029,6 @@
         reader.readAsText(file);
     }
 
-    // 展示用途：模擬同步數據並隨機設定幾位人員過期
     async function startAutoUpdate() {
         document.getElementById('update-animation-modal').classList.remove('hidden');
         const pb = document.getElementById('update-progress-bar');
@@ -1000,11 +1039,9 @@
         pb.classList.add('animate-progress');
         
         setTimeout(async () => { 
-            // 重新取得原始資料
             records = await fetchAllRecords();
             if (records.length === 0) records = [...imageDataset];
 
-            // 隨機挑選 3 個有日期的紀錄改為過期 (設定為 3 年前)
             const recordsWithDates = records.filter(r => r.lastDate !== "");
             if (recordsWithDates.length > 0) {
                 const shuffled = recordsWithDates.sort(() => 0.5 - Math.random());
@@ -1020,7 +1057,6 @@
                 });
             }
 
-            // 保存修改後的狀態到 DB
             await persistAllRecords(records);
             
             document.getElementById('update-animation-modal').classList.add('hidden'); 
@@ -1037,7 +1073,7 @@
             
             records = await fetchAllRecords();
             if (records.length === 0) {
-                records = [...imageDataset];
+                records = JSON.parse(JSON.stringify(imageDataset));
                 await persistAllRecords(records);
             }
             renderReport(); 
