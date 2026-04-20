@@ -166,6 +166,21 @@
             transform: scale(1.02);
         }
 
+        .move-btn {
+            padding: 2px;
+            border-radius: 4px;
+            color: #94a3b8;
+            transition: all 0.2s;
+        }
+        .move-btn:hover:not(:disabled) {
+            color: #6366f1;
+            background: #eef2ff;
+        }
+        .move-btn:disabled {
+            opacity: 0.2;
+            cursor: not-allowed;
+        }
+
         @media print {
             @page {
                 size: A4 landscape;
@@ -183,6 +198,7 @@
             .table-cell:last-child, 
             .table-header-cell:last-child, 
             .link-icon-btn,
+            .move-controls,
             footer {
                 display: none !important;
             }
@@ -297,7 +313,7 @@
         <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
             <div class="flex items-center gap-4">
                 <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                    <i data-lucide="table-2" class="w-5 h-5"></i> 證照清單明細報表
+                    <i data-lucide="table-2" class="w-5 h-5"></i> 證照清單明細
                 </h2>
                 <button id="add-person-btn" onclick="openAddModal()" class="hidden bg-emerald-600 text-white px-4 py-1.5 rounded-lg font-bold text-sm hover:bg-emerald-700 transition flex items-center gap-2 shadow-sm">
                     <i data-lucide="user-plus" class="w-4 h-4"></i> 新增人員
@@ -668,62 +684,89 @@
         
         tableBody.innerHTML = '';
         let stats = { total: 0, expired: 0, warning: 0, valid: 0 };
-        let visibleCount = 0;
+        
+        // 篩選數據
+        const filteredRecords = records.map((r, actualIdx) => ({ ...r, actualIdx })).filter(record => {
+            const nextDate = calculateNextDate(record.lastDate, record.cycle);
+            const status = getStatusInfo(nextDate, record.lastDate);
+            
+            const matchesSearch = (record.name || "").toLowerCase().includes(searchTerm) || 
+                                (record.item || "").toLowerCase().includes(searchTerm) || 
+                                (record.certNo || "").toLowerCase().includes(searchTerm);
+            const matchesStatus = statusFilter === "" || status.label === statusFilter;
+            const matchesItem = itemFilter === "" || record.item === itemFilter;
+            
+            return matchesSearch && matchesStatus && matchesItem;
+        });
 
-        if (records.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="10" class="p-20 text-center text-slate-400">目前尚無資料。</td></tr>';
+        // 計算統計數據
+        records.forEach(record => {
+            const nextDate = calculateNextDate(record.lastDate, record.cycle);
+            const status = getStatusInfo(nextDate, record.lastDate);
+            stats.total++;
+            if (status.label === '已過期') stats.expired++;
+            else if (status.label === '待受訓') stats.warning++;
+            else stats.valid++;
+        });
+
+        if (filteredRecords.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="10" class="p-20 text-center text-slate-400">目前尚無搜尋結果。</td></tr>';
         } else {
-            records.forEach(record => {
+            filteredRecords.forEach((record, visibleIdx) => {
                 const nextDate = calculateNextDate(record.lastDate, record.cycle);
                 const status = getStatusInfo(nextDate, record.lastDate);
                 const hasAttachments = record.attachments && record.attachments.length > 0;
                 
-                stats.total++;
-                if (status.label === '已過期') stats.expired++;
-                else if (status.label === '待受訓') stats.warning++;
-                else stats.valid++;
+                const displayNextDate = nextDate ? nextDate.toISOString().split('T')[0] : "待補件";
+                const row = document.createElement('tr');
+                row.className = "table-row";
 
-                const matchesSearch = (record.name || "").toLowerCase().includes(searchTerm) || 
-                                    (record.item || "").toLowerCase().includes(searchTerm) || 
-                                    (record.certNo || "").toLowerCase().includes(searchTerm);
-                const matchesStatus = statusFilter === "" || status.label === statusFilter;
-                const matchesItem = itemFilter === "" || record.item === itemFilter;
+                // 排序控制按鈕 (僅在管理員模式顯示)
+                const moveControls = isAdmin ? `
+                    <div class="move-controls flex flex-col gap-0.5 ml-auto">
+                        <button onclick="moveRecord(${record.actualIdx}, -1)" class="move-btn" title="上移" ${record.actualIdx === 0 ? 'disabled' : ''}>
+                            <i data-lucide="chevron-up" class="w-3 h-3"></i>
+                        </button>
+                        <button onclick="moveRecord(${record.actualIdx}, 1)" class="move-btn" title="下移" ${record.actualIdx === records.length - 1 ? 'disabled' : ''}>
+                            <i data-lucide="chevron-down" class="w-3 h-3"></i>
+                        </button>
+                    </div>
+                ` : '';
 
-                if (matchesSearch && matchesStatus && matchesItem) {
-                    visibleCount++;
-                    const displayNextDate = nextDate ? nextDate.toISOString().split('T')[0] : "待補件";
-                    const row = document.createElement('tr');
-                    row.className = "table-row";
-                    row.innerHTML = `
-                        <td class="table-cell font-mono text-slate-400 text-sm">${visibleCount}</td>
-                        <td class="table-cell font-medium text-slate-500">${record.dept}</td>
-                        <td class="table-cell font-bold text-slate-800">${record.name}</td>
-                        <td class="table-cell font-semibold text-indigo-600">${record.item}</td>
-                        <td class="table-cell">
-                            <div class="flex items-center justify-between group max-w-[180px]">
-                                <span class="text-xs font-mono text-slate-400 truncate mr-2" title="${record.certNo}">${record.certNo || '---'}</span>
-                                <button onclick="handleLinkClick(${record.id})" 
-                                        class="link-icon-btn p-1.5 rounded-lg transition-colors ${hasAttachments ? 'text-blue-500 hover:bg-blue-50' : 'text-slate-300'}">
-                                    <i data-lucide="link" class="w-3.5 h-3.5"></i>
-                                </button>
-                            </div>
-                        </td>
-                        <td class="table-cell text-slate-500">${record.cycle}</td>
-                        <td class="table-cell text-slate-500">${record.lastDate || '<span class="text-red-300">待補</span>'}</td>
-                        <td class="table-cell font-bold ${status.text}">${displayNextDate}</td>
-                        <td class="table-cell text-center">
-                            <span class="badge-status ${status.bg} ${status.text}">
-                                ${status.label}
-                            </span>
-                        </td>
-                        <td class="table-cell text-center">
-                            <button onclick="openEditModal(${record.id})" class="p-2 hover:bg-slate-100 text-slate-400 hover:text-indigo-600 rounded-lg transition">
-                                <i data-lucide="${isAdmin ? 'edit-3' : 'settings'}" class="w-4 h-4"></i>
+                row.innerHTML = `
+                    <td class="table-cell">
+                        <div class="flex items-center gap-2">
+                            <span class="font-mono text-slate-400 text-sm w-4">${visibleIdx + 1}</span>
+                            ${moveControls}
+                        </div>
+                    </td>
+                    <td class="table-cell font-medium text-slate-500">${record.dept}</td>
+                    <td class="table-cell font-bold text-slate-800">${record.name}</td>
+                    <td class="table-cell font-semibold text-indigo-600">${record.item}</td>
+                    <td class="table-cell">
+                        <div class="flex items-center justify-between group max-w-[180px]">
+                            <span class="text-xs font-mono text-slate-400 truncate mr-2" title="${record.certNo}">${record.certNo || '---'}</span>
+                            <button onclick="handleLinkClick(${record.id})" 
+                                    class="link-icon-btn p-1.5 rounded-lg transition-colors ${hasAttachments ? 'text-blue-500 hover:bg-blue-50' : 'text-slate-300'}">
+                                <i data-lucide="link" class="w-3.5 h-3.5"></i>
                             </button>
-                        </td>
-                    `;
-                    tableBody.appendChild(row);
-                }
+                        </div>
+                    </td>
+                    <td class="table-cell text-slate-500">${record.cycle}</td>
+                    <td class="table-cell text-slate-500">${record.lastDate || '<span class="text-red-300">待補</span>'}</td>
+                    <td class="table-cell font-bold ${status.text}">${displayNextDate}</td>
+                    <td class="table-cell text-center">
+                        <span class="badge-status ${status.bg} ${status.text}">
+                            ${status.label}
+                        </span>
+                    </td>
+                    <td class="table-cell text-center">
+                        <button onclick="openEditModal(${record.id})" class="p-2 hover:bg-slate-100 text-slate-400 hover:text-indigo-600 rounded-lg transition">
+                            <i data-lucide="${isAdmin ? 'edit-3' : 'settings'}" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
             });
         }
 
@@ -734,6 +777,19 @@
         
         updateItemFilter();
         initIcons();
+    }
+
+    // 移動紀錄邏輯
+    async function moveRecord(index, direction) {
+        const newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= records.length) return;
+
+        // 交換陣列元素
+        [records[index], records[newIndex]] = [records[newIndex], records[index]];
+        
+        // 保存並渲染
+        await persistAllRecords(records);
+        renderReport();
     }
 
     function handleLinkClick(id) {
@@ -957,7 +1013,7 @@
             lastDate: document.getElementById('edit-lastDate').value || ""
         };
         if (idVal === "") {
-            const newId = records.length > 0 ? Math.max(...records.map(r => r.id)) + 1 : 1;
+            const newId = Date.now(); // 使用時間戳作為 ID 確保不重複
             records.push({ id: newId, ...data, attachments: [] });
         } else {
             const id = parseInt(idVal);
