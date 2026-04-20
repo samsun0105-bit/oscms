@@ -171,6 +171,7 @@
             .table-cell:last-child, 
             .table-header-cell:last-child, 
             .link-icon-btn,
+            .reorder-btns,
             footer {
                 display: none !important;
             }
@@ -282,7 +283,7 @@
         <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
             <div class="flex items-center gap-4">
                 <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                    <i data-lucide="table-2" class="w-5 h-5"></i> 證照清單明細報表
+                    <i data-lucide="table-2" class="w-5 h-5"></i> 證照清單明細
                 </h2>
                 <button id="add-person-btn" onclick="openAddModal()" class="hidden bg-emerald-600 text-white px-4 py-1.5 rounded-lg font-bold text-sm hover:bg-emerald-700 transition flex items-center gap-2 shadow-sm">
                     <i data-lucide="user-plus" class="w-4 h-4"></i> 新增人員
@@ -310,7 +311,7 @@
                 <table class="w-full border-collapse min-w-[1000px]">
                     <thead>
                         <tr>
-                            <th class="table-header-cell w-16">項次</th>
+                            <th class="table-header-cell w-16 text-center">項次</th>
                             <th class="table-header-cell">作業單位</th>
                             <th class="table-header-cell">姓名</th>
                             <th class="table-header-cell">訓練項目</th>
@@ -329,9 +330,9 @@
     </main>
 
     <!-- 頁尾資訊 -->
-<footer class="max-w-7xl mx-auto px-8 pb-10 pt-4 flex flex-col items-center text-xs text-slate-400 font-medium gap-1">
-    <div>© 2026 職業安全衛生室｜職業安全證照管理系統</div>
-    <div>Developed by Sam Sun</div>
+    <footer class="max-w-7xl mx-auto px-8 pb-10 pt-4 flex flex-col items-center text-xs text-slate-400 font-medium gap-1">
+        <div>© 2026 職業安全衛生室｜職業安全證照管理系統</div>
+        <div>Developed by Sam Sun</div>
     </footer>
 
     <!-- 檔案預覽 Modal -->
@@ -646,6 +647,24 @@
         });
     }
 
+    // --- 排序功能 ---
+    async function moveRecord(id, direction) {
+        const index = records.findIndex(r => r.id === id);
+        if (index === -1) return;
+        
+        const newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= records.length) return;
+        
+        // 交換位置
+        const temp = records[index];
+        records[index] = records[newIndex];
+        records[newIndex] = temp;
+        
+        // 儲存並重新渲染
+        await persistAllRecords(records);
+        renderReport();
+    }
+
     async function renderReport() {
         const tableBody = document.getElementById('report-body');
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
@@ -656,18 +675,26 @@
         let stats = { total: 0, expired: 0, warning: 0, valid: 0 };
         let visibleCount = 0;
 
+        // 計算基礎統計數據
+        records.forEach(record => {
+            const nextDate = calculateNextDate(record.lastDate, record.cycle);
+            const status = getStatusInfo(nextDate, record.lastDate);
+            stats.total++;
+            if (status.label === '已過期') stats.expired++;
+            else if (status.label === '待受訓') stats.warning++;
+            else stats.valid++;
+        });
+
         if (records.length === 0) {
             tableBody.innerHTML = '<tr><td colspan="10" class="p-20 text-center text-slate-400">目前尚無資料。</td></tr>';
         } else {
-            records.forEach(record => {
+            // 用於檢查是否在篩選模式（篩選模式下通常不建議排序以免邏輯混亂，但此處維持可用）
+            const isFiltering = searchTerm !== "" || statusFilter !== "" || itemFilter !== "";
+
+            records.forEach((record, arrayIndex) => {
                 const nextDate = calculateNextDate(record.lastDate, record.cycle);
                 const status = getStatusInfo(nextDate, record.lastDate);
                 const hasAttachments = record.attachments && record.attachments.length > 0;
-                
-                stats.total++;
-                if (status.label === '已過期') stats.expired++;
-                else if (status.label === '待受訓') stats.warning++;
-                else stats.valid++;
 
                 const matchesSearch = (record.name || "").toLowerCase().includes(searchTerm) || 
                                     (record.item || "").toLowerCase().includes(searchTerm) || 
@@ -678,15 +705,36 @@
                 if (matchesSearch && matchesStatus && matchesItem) {
                     visibleCount++;
                     const displayNextDate = nextDate ? nextDate.toISOString().split('T')[0] : "待補件";
+                    
+                    // 管理模式下的排序按鈕
+                    let reorderHtml = '';
+                    if (isAdmin) {
+                        reorderHtml = `
+                            <div class="reorder-btns flex flex-col items-center justify-center -mt-1 ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onclick="moveRecord(${record.id}, -1)" class="text-slate-300 hover:text-indigo-500 disabled:opacity-0" ${arrayIndex === 0 ? 'disabled' : ''}>
+                                    <i data-lucide="chevron-up" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <button onclick="moveRecord(${record.id}, 1)" class="text-slate-300 hover:text-indigo-500 disabled:opacity-0" ${arrayIndex === records.length - 1 ? 'disabled' : ''}>
+                                    <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </div>
+                        `;
+                    }
+
                     const row = document.createElement('tr');
-                    row.className = "table-row";
+                    row.className = "table-row group";
                     row.innerHTML = `
-                        <td class="table-cell font-mono text-slate-400 text-sm">${visibleCount}</td>
+                        <td class="table-cell">
+                            <div class="flex items-center justify-center gap-1">
+                                <span class="font-mono text-slate-400 text-sm w-4 text-center">${visibleCount}</span>
+                                ${reorderHtml}
+                            </div>
+                        </td>
                         <td class="table-cell font-medium text-slate-500">${record.dept}</td>
                         <td class="table-cell font-bold text-slate-800">${record.name}</td>
                         <td class="table-cell font-semibold text-indigo-600">${record.item}</td>
                         <td class="table-cell">
-                            <div class="flex items-center justify-between group max-w-[180px]">
+                            <div class="flex items-center justify-between group-inner max-w-[180px]">
                                 <span class="text-xs font-mono text-slate-400 truncate mr-2" title="${record.certNo}">${record.certNo || '---'}</span>
                                 <button onclick="handleLinkClick(${record.id})" 
                                         class="link-icon-btn p-1.5 rounded-lg transition-colors ${hasAttachments ? 'text-blue-500 hover:bg-blue-50' : 'text-slate-300'}">
@@ -773,7 +821,6 @@
         initIcons();
     }
 
-    // --- 恢復拖拉功能相關函數 ---
     function handleDragOver(e) {
         e.preventDefault();
         e.stopPropagation();
